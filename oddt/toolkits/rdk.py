@@ -380,12 +380,15 @@ class Molecule(object):
             self.Mol.AddConformer(conf)
         return self
     
-    def _repr_html_(self):
+    def _repr_png_(self):
         mol = self.clone
         AllChem.Compute2DCoords(mol.Mol)
         buffer = BytesIO()
         Draw.MolToImage(mol.Mol).save(buffer, format='png')
-        return '<img src="data:image/png;base64,%s" alt="Mol"/>' % b64encode(buffer.getvalue()).decode('ascii')
+        return buffer.getvalue()
+    
+#    def _repr_html_(self):
+#        return '<img src="data:image/png;base64,%s" alt="Mol"/>' % b64encode().decode('ascii')
 
     
     def _dicts(self):
