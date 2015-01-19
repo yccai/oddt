@@ -46,6 +46,10 @@ try:
 except:
     PILtk = None
 
+# Drawing in ipython
+from io import BytesIO
+from base64 import b64encode
+
 # Aggdraw
 try:
     import aggdraw
@@ -375,6 +379,14 @@ class Molecule(object):
         for conf in source.Mol.GetConformers():
             self.Mol.AddConformer(conf)
         return self
+    
+    def _repr_html_(self):
+        mol = self.clone
+        AllChem.Compute2DCoords(mol.Mol)
+        buffer = BytesIO()
+        Draw.MolToImage(mol.Mol).save(buffer, format='png')
+        return '<img src="data:image/png;base64,%s" alt="Mol"/>' % b64encode(buffer.getvalue()).decode('ascii')
+
     
     def _dicts(self):
         # Atoms
