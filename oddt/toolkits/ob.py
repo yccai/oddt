@@ -146,6 +146,10 @@ class Molecule(pybel.Molecule):
         return self._ring_dict
     
     @property
+    def num_atoms(self):
+        return self.OBMol.NumAtoms()
+    
+    @property
     def clone(self):
         return Molecule(ob.OBMol(self.OBMol))
     
@@ -183,7 +187,7 @@ class Molecule(pybel.Molecule):
                  ]
 
         a = []
-        atom_dict = np.empty(self.OBMol.NumAtoms(), dtype=atom_dtype)
+        atom_dict = np.empty(self.num_atoms, dtype=atom_dtype)
         metals = [3,4,11,12,13,19,20,21,22,23,24,25,26,27,28,29,30,31,37,38,39,40,41,42,43,44,45,46,47,48,49,50,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,87,88,89,90,91,
     92,93,94,95,96,97,98,99,100,101,102,103]
         for i, atom in enumerate(self.atoms):
@@ -295,6 +299,25 @@ class Molecule(pybel.Molecule):
         if self.protein:
             self._res_dict = res_dict
 
+class Submolecule(Molecule):
+    def __init__(self, mol, atom_ids=None, res_ids=None):
+        super(Submolecule,self).__init__(mol.OBMol)
+        
+        if atom_ids and len(atom_ids) > 0:
+            self._atom_mask = np.array(atom_ids)
+        elif res_ids and len(res_ids) > 0:
+            self._atom_mask = np.array([atom.idx for residue in mol.residues if residue.idx in res_ids for atom in residue])
+        else:
+            self._atom_mask = np.array([])
+    
+    @property
+    def atoms(self):
+        return [atom for atom in super(Molecule,self).atoms if atom.idx in self._atom_mask]
+    
+    @property
+    def num_atoms(self):
+        return len(self._atom_mask)
+        
 ### Extend pybel.Molecule
 pybel.Molecule = Molecule
 
