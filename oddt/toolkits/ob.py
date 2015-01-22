@@ -312,7 +312,7 @@ class Submolecule(Molecule):
     
     @property
     def atoms(self):
-        return [atom for atom in super(Molecule,self).atoms if atom.idx in self._atom_mask]
+        return [Atom(self.OBMol.GetAtom(i)) for i in self._atom_mask]
     
     @property
     def num_atoms(self):
