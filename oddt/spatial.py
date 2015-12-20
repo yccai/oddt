@@ -2,6 +2,7 @@
 Mainly used by other modules, but can be accessed directly.
 """
 
+import math
 import numpy as np
 from scipy.spatial.distance import cdist as distance
 from numba import autojit, double
@@ -181,6 +182,7 @@ def numba_angle_2v(v1, v2):
     angles : numpy array, shape = [n_vectors]
         Series of angles in degrees
     """
+    # doesn't work with broadcasting (check if ndims = 3)
     v1_M, v1_N = v1.shape
     v2_M, v2_N = v2.shape
     result = np.zeros(v1_M)
@@ -189,6 +191,11 @@ def numba_angle_2v(v1, v2):
         for d in range(v1_N):
             result[i] += v1[i][d]*v2[i][d]
         result[i] /= result_norm[i]
+        # clip values due to rounding
+        if result[i] > 1:
+            result[i] = 1
+        elif result[i] < -1:
+            result[i] = -1
         result[i] = math.degrees(math.acos(result[i]))
     return result
 
@@ -201,14 +208,14 @@ def numba_angle(p1,p2,p3):
 @autojit
 def numba_dihedral(p1,p2,p3,p4):
     # BUG! works for series (2dim), fix for points (1dim)
-    v12 = (p1-p2)/numba_norm(p1-p2)
-    v23 = (p2-p3)/numba_norm(p2-p3)
-    v34 = (p3-p4)/numba_norm(p3-p4)
+    v12 = (p1-p2)/numba_norm(p1-p2).reshape(-1,1)
+    v23 = (p2-p3)/numba_norm(p2-p3).reshape(-1,1)
+    v34 = (p3-p4)/numba_norm(p3-p4).reshape(-1,1)
     c1 = numba_cross(v12, v23)
     c2 = numba_cross(v23, v34)
     out = numba_angle_2v(c1, c2)
     # check clockwise and anticlockwise
-    n1 = c1/numba_norm(c1)
+    n1 = c1/numba_norm(c1).reshape(-1,1)
 
     # not numba save
     mask = (n1*v34).sum(axis=-1) > 0
@@ -240,10 +247,10 @@ def numba_distance(X, Y):
     return D
 
 
-def init():
-    """ call all functions once to compile them """
-    vec1, vec2 = np.random.random((10,3)), np.random.random((10,3))
-    numba_cross(vec1, vec2)
-    numba_norm(vec1)
-    numba_normalize(vec1)
-init()
+# def init():
+#     """ call all functions once to compile them """
+#     vec1, vec2 = np.random.random((10,3)), np.random.random((10,3))
+#     numba_cross(vec1, vec2)
+#     numba_norm(vec1)
+#     numba_normalize(vec1)
+# init()
