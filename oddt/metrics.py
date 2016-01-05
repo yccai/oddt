@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 """Metrics for estimating performance of drug discovery methods implemented in ODDT"""
 
 from math import ceil
 import numpy as np
 from sklearn.metrics import roc_curve as roc, auc, mean_squared_error
 
-__all__ = ['roc', 'auc', 'roc_auc', 'roc_log_auc', 'enrichment_factor', 'random_roc_log_auc', 'rmse']
+__all__ = ['roc', 'auc', 'roc_auc', 'roc_log_auc', 'enrichment_factor', 'random_roc_log_auc', 'rmse', 'rie', 'bedroc']
 
 def roc_auc(y_true, y_score, pos_label=None, ascending_score=True):
     """Computes ROC AUC score
@@ -25,8 +26,8 @@ def roc_auc(y_true, y_score, pos_label=None, ascending_score=True):
 
     Returns
     -------
-        ef : float
-            Enrichment Factor for given percenage in range 0:1
+        roc_auc : float
+            ROC AUC in range 0:1
     """
     if ascending_score:
         y_score = -y_score
@@ -43,7 +44,7 @@ def rmse(y_true, y_pred):
 
         y_pred : array-like of shape = [n_samples] or [n_samples, n_outputs]
             Estimated target values.
-    
+
     Returns
     -------
         rmse : float
@@ -132,3 +133,82 @@ def random_roc_log_auc(log_min=0.001, log_max=1.):
             semi-log ROC AUC for random distribution
     """
     return (log_max-log_min)/(np.log(10)*np.log10(log_max/log_min))
+
+def rie(y_true, y_score, alpha=20, pos_label=None):
+    """Computes Robust Initial Enhancement.
+
+    Parameters
+    ----------
+        y_true : array, shape=[n_samples]
+            True binary labels, in range {0,1} or {-1,1}. If positive label is different than 1, it must be explicitly defined.
+
+        y_score : array, shape=[n_samples]
+            Scores for tested series of samples
+
+        alpha: float
+            Alpha. 1/Alpha should be proportional to the percentage in EF.
+
+        pos_label: int
+            Positive label of samples (if other than 1)
+
+    Returns
+    -------
+    rie : float
+         Robust Initial Enhancement
+
+    Notes
+    ----------
+    .. [1] Sheridan, R. P.; Singh, S. B.; Fluder, E. M.; Kearsley, S. K. Protocols for bridging the peptide to nonpeptide gap in topological similarity searches. J. Chem. Inf. Comput. Sci. 2001, 41, 1395−1406.
+
+    """
+    if pos_label is None:
+        pos_label = 1
+    labels = y_true == pos_label
+    alpha = float(alpha)
+    N = float(len(labels))
+    n = float(labels.sum())
+    r = np.argwhere(labels).astype(float)+1 # need 1-based ranking
+    x = r/N
+    ra = float(n)/float(N)
+    ri = 1-ra
+    return np.exp(-alpha*x).sum() / (ra * (1 - np.exp(-alpha))/(np.exp(alpha/N) - 1))
+
+def bedroc(y_true, y_score, alpha=20., pos_label=None):
+    """Computes Boltzmann-Enhanced Discrimination of Receiver Operating Characteristic.
+
+    Parameters
+    ----------
+        y_true : array, shape=[n_samples]
+            True binary labels, in range {0,1} or {-1,1}. If positive label is different than 1, it must be explicitly defined.
+
+        y_score : array, shape=[n_samples]
+            Scores for tested series of samples
+
+        alpha: float
+            Alpha. 1/Alpha should be proportional to the percentage in EF.
+
+        pos_label: int
+            Positive label of samples (if other than 1)
+
+    Returns
+    -------
+    bedroc : float
+        Boltzmann-Enhanced Discrimination of Receiver Operating Characteristic
+
+    Notes
+    ----------
+    .. [1] Truchon J-F, Bayly CI. Evaluating virtual screening methods: good and bad metrics for the “early recognition” problem. J Chem Inf Model. 2007;47: 488–508.
+
+    """
+    if pos_label is None:
+        pos_label = 1
+    labels = y_true == pos_label
+    alpha = float(alpha)
+    N = float(len(labels))
+    n = float(labels.sum())
+    r = np.argwhere(labels).astype(float)+1 # need 1-based ranking
+    x = r/N
+    ra = float(n)/float(N)
+    ri = 1-ra
+    rie = np.exp(-alpha*x).sum() / (ra * (1 - np.exp(-alpha))/(np.exp(alpha/N) - 1))
+    return rie * ra * np.sinh(alpha/2)/(np.cosh(alpha/2) - np.cosh(alpha/2 - alpha * ra)) + 1/(1 - np.exp(alpha * ri))
