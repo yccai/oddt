@@ -72,6 +72,9 @@ class rfscore(scorer):
                             'vina_num_rotors',]
             vina = oddt_vina_descriptor(protein, vina_scores = vina_scores)
             descriptors = ensemble_descriptor((vina, cc))
+        elif version == 5:
+            cutoff = 12
+            descriptors = close_contacts(protein, cutoff = cutoff, protein_types = protein_atomic_nums, ligand_types = ligand_atomic_nums, scale = True)
 
         super(rfscore,self).__init__(model, descriptors, score_title = 'rfscore_v%i' % self.version)
 

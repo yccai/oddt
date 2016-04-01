@@ -36,7 +36,7 @@ group.add_argument('--seed', help='Random Seed')
 
 # scoring
 group = parser.add_argument_group('Rescoring')
-group.add_argument('--score', dest='score', choices=['autodock_vina', 'rfscore', 'rfscore_v1', 'rfscore_v2', 'rfscore_v3', 'rfscore_v4', 'nnscore'], action='append', default=[], help='Choose built-in scoring function to be used')#
+group.add_argument('--score', dest='score', choices=['autodock_vina', 'rfscore', 'rfscore_v1', 'rfscore_v2', 'rfscore_v3', 'rfscore_v4', 'rfscore_v5', 'nnscore'], action='append', default=[], help='Choose built-in scoring function to be used')#
 group.add_argument('--score_file', dest='score_file',  action='append', default=[], help='Choose ODDT scoring function saved to file (pickle)')
 
 args = parser.parse_args()

@@ -77,7 +77,7 @@ def atoms_by_type(atom_dict, types, mode = 'atomic_nums'):
         return out
 
 class close_contacts(object):
-    def __init__(self, protein = None, cutoff = 4, mode = 'atomic_nums', ligand_types = None, protein_types = None, aligned_pairs = False):
+    def __init__(self, protein = None, cutoff = 4, mode = 'atomic_nums', ligand_types = None, protein_types = None, aligned_pairs = False, scale = False):
         """Close contacts descriptor which tallies atoms of type X in certain cutoff from atoms of type Y.
 
         Parameters
@@ -115,6 +115,7 @@ class close_contacts(object):
         self.protein_types = protein_types if protein_types else ligand_types
         self.aligned_pairs = aligned_pairs
         self.mode = mode
+        self.scale = scale
 
     def build(self, ligands, protein = None, single = False):
         """Builds descriptors for series of ligands
@@ -154,14 +155,17 @@ class close_contacts(object):
                     count = ((d > self.cutoff[...,0]) & (d <= self.cutoff[...,1])).sum(axis=(0,1))
                     #count = ne.evaluate('(d > c0) & (d <= c1)', {'d': d, 'c0': cutoff[...,0], 'c1': self.cutoff[...,1]}).sum(axis=(0,1))
                 else:
-                    count = (d <= self.cutoff).sum()
+                    if self.scale:
+                        count = ((d <= self.cutoff)/d**2).sum()
+                    else:
+                        count = (d <= self.cutoff).sum()
                 desc.append(count)
-            desc = np.array(desc, dtype=int).flatten()
+            desc = np.array(desc, dtype=float if self.scale else int).flatten()
             out = np.vstack((out, desc))
         return out[1:]
 
     def __reduce__(self):
-        return close_contacts, (self.protein, self.original_cutoff, self.mode, self.ligand_types, self.protein_types, self.aligned_pairs)
+        return close_contacts, (self.protein, self.original_cutoff, self.mode, self.ligand_types, self.protein_types, self.aligned_pairs, self.scale)
 
 class fingerprints(object):
     def __init__(self, fp = 'fp2', toolkit = 'ob'):
