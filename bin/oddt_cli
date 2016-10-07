@@ -224,4 +224,5 @@ if __name__ == '__main__':
     # On Windows calling this function is necessary.
     # On Linux/OSX it does nothing.
     multiprocessing.freeze_support()
+    joblib.parallel.mp.freeze_support()
     main()
