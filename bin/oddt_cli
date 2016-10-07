@@ -11,8 +11,6 @@ try:
         import multiprocessing.popen_spawn_win32 as forking
     else:
         import multiprocessing.popen_fork as forking
-finally:
-    import multiprocessing.forking
 except ImportError:
     import multiprocessing.forking as forking
 
@@ -227,5 +225,4 @@ if __name__ == '__main__':
     # On Windows calling this function is necessary.
     # On Linux/OSX it does nothing.
     multiprocessing.freeze_support()
-    joblib.parallel.mp.freeze_support()
     main()
